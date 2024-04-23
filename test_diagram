@@ -1,0 +1,20 @@
+classDiagram
+    class Person{
+        +float hunger
+        +float thirst
+        +float tiredness
+        +float happiness
+        +float belief
+        +float curiousity
+        +float cautiousness
+    }
+
+graph TD
+    P[Person]
+    p1(hunger)-->P
+    p2(thirst)-->P
+    p3(tiredness)-->P
+    p4(happiness)-->P
+    p5(belief)-->P
+    p6(curiousity)-->P
+    p7(cautiousness)-->P
