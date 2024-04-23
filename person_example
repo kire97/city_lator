@@ -1,0 +1,40 @@
+Person
+	Health Conditions
+	Contracts
+	Known Locations
+	Known People
+	Known Things
+
+Contract
+	Condition(s)
+		Work
+	Return
+		Money
+
+Known Thing
+	Thing
+		Sodie Pop
+	Opinion (inherited from "known" parent class)
+		Good
+	CertaintyOfExistance (?maybe?)
+		Small
+
+Known Person
+	Person
+		Bob
+	Persons Shared Opinions
+		Opinion
+			Thing
+				Sodie Pop
+			Opinion
+				Bad
+		Opinion
+			Thing
+				Gun
+			Opinion
+				Good
+	Opinion
+		Bad
+	CertaintyOfExistance
+		High
+
