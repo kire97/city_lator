@@ -80,7 +80,7 @@ classDiagram
         }
 ```
 
-````mermaid
+```mermaid
 ---
 config:
   theme: forest
