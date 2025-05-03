@@ -51,3 +51,50 @@ graph TD
     a5-->o2
     a3-->a1
 ```
+
+```mermaid
+classDiagram
+        Person <|-- Task
+        Person <|-- HealthStatus
+        Person <|-- ItemInstance
+        ItemInstance <|-- Item
+        class Person {
+            bool createTask()
+            bool consumeTask()
+            bool trade(Item*, int)
+            bool alter(HealthStatus*, float)
+            string getName()
+        }
+        class Task {
+          int call(Person*)
+        }
+        class HealthStatus {
+          string getName()
+        }
+        class Item {
+          string getName()
+          bool isStackable()
+        }
+        class ItemInstance {
+            Item* getItem()
+        }
+```
+
+````mermaid
+---
+config:
+  theme: forest
+---
+erDiagram
+    PERSON ||--o{ TASK : contains
+    TASK ||--|| ACTION : contains
+    PERSON ||..|| HEALTH-STATUS : contains
+    PERSON ||..|| PERSON-IDENTITY: contains
+    PERSON ||..o{ MEMORIES: contains
+    MEMORIES ||--|| PERSON-MEMORY: contains
+    MEMORIES ||--|| LOCATION-MEMORY: contains
+    MEMORIES ||--|| ITEM-MEMORY: contains
+    PERSON-MEMORY ||..|| PERSON-IDENTITY: points-at
+    LOCATION-MEMORY ||..|| LOCATION: points-at
+    ITEM-MEMORY ||..|| ITEM: points-at
+```
