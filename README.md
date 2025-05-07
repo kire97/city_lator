@@ -37,64 +37,53 @@ graph TD
     p8(sanity)-->P
 
     P--low on parameter-->o1{has remedy on hand?}
-    
+    o1--no -->o2{is remedy in close proximity?}
+
     o1--yes -->a1[use remedy]
     
-    o1--no -->o2{knows location of remedy?}
-    o2--yes -->a2[go to location]
-    o2--no -->a4[look for new location]
+    o2--no -->o3{knows location of remedy?}
+    o3--yes -->a2[go to location]
+    o3--no -->a4[look for new location]
     a4-->o3
 
-    a2-->o3{is remedy at location?}
+    a2-->o4{is remedy at location?}
     o3--yes -->a3[accuire remedy]
     o3--no -->a5[alter remedy memory connection to location]
-    a5-->o2
+    a5-->o3
     a3-->a1
-```
-
-```mermaid
-classDiagram
-        Person <|-- Task
-        Person <|-- HealthStatus
-        Person <|-- ItemInstance
-        ItemInstance <|-- Item
-        class Person {
-            bool createTask()
-            bool consumeTask()
-            bool trade(Item*, int)
-            bool alter(HealthStatus*, float)
-            string getName()
-        }
-        class Task {
-          int call(Person*)
-        }
-        class HealthStatus {
-          string getName()
-        }
-        class Item {
-          string getName()
-          bool isStackable()
-        }
-        class ItemInstance {
-            Item* getItem()
-        }
 ```
 
 ```mermaid
 ---
 config:
-  theme: forest
+  theme: redux
 ---
 erDiagram
     PERSON ||--o{ TASK : contains
     TASK ||--|| ACTION : contains
-    PERSON ||..|| HEALTH-STATUS : contains
-    PERSON ||..|| PERSON-IDENTITY: contains
-    PERSON ||..o{ MEMORIES: contains
-    MEMORIES ||--|| PERSON-MEMORY: contains
-    MEMORIES ||--|| LOCATION-MEMORY: contains
-    MEMORIES ||--|| ITEM-MEMORY: contains
-    PERSON-MEMORY ||..|| PERSON-IDENTITY: points-at
-    LOCATION-MEMORY ||..|| LOCATION: points-at
-    ITEM-MEMORY ||..|| ITEM: points-at
+    PERSON ||--o{ HEALTH-CONDITION: contains
+    HEALTH-CONDITION ||..|{ HEALTH-STATUS: acts-upon
+    PERSON ||--|{ HEALTH-STATUS : contains
+    PERSON ||--|| PERSON-IDENTITY: contains
+    PERSON ||--|| MEMORIES: contains
+    MEMORIES ||--o{ ITEM-KNOWLEDGE: contains
+    ITEM-KNOWLEDGE ||..|| ITEM: points-at
+    MEMORIES ||--o{ PERSON-MEMORY: contains
+    ITEM-MEMORY ||..|| LOCATION-KNOWLEDGE: points-at
+    MEMORIES ||--o{ LOCATION-KNOWLEDGE: contains
+    EVENT-MEMORY ||..o{ ITEM-MEMORY: points-at
+    MEMORIES ||--o{ ITEM-MEMORY: contains
+    ITEM-MEMORY ||..|| ITEM-KNOWLEDGE: points-at
+    PERSON-MEMORY ||--|| PERSON-IDENTITY: contains
+    LOCATION-KNOWLEDGE ||..|| LOCATION: points-at
+    MEMORIES ||--o{ EVENT-MEMORY: contains
+    EVENT-MEMORY ||..o{ PERSON-IDENTITY: points-at
+    EVENT-MEMORY ||..|| ACTION: points-at
 ```
+
+When an Item is observed; compare observational parameters with item-knowledge bank.
+The persons threshold for recognizing the object is dependant on factors such as visual clarity and the persons personality.
+
+When recollecting an item memory that has a known location; a mental representation of the objects known parameters is created at the known location.
+If an object matching the representation is recognized then the object is found.
+If the mental representation is occluded, try to get a vantage point where it can be observed before dismissing the memory.
