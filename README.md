@@ -37,18 +37,19 @@ graph TD
     p8(sanity)-->P
 
     P--low on parameter-->o1{has remedy on hand?}
-    o1--no -->o2{is remedy in close proximity?}
+    o1--no -->o2[scout vision for remedy]
+    o2--yes -->a3
 
     o1--yes -->a1[use remedy]
     
     o2--no -->o3{knows location of remedy?}
     o3--yes -->a2[go to location]
     o3--no -->a4[look for new location]
-    a4-->o3
+    a4-->o4
 
     a2-->o4{is remedy at location?}
-    o3--yes -->a3[accuire remedy]
-    o3--no -->a5[alter remedy memory connection to location]
+    o4--yes -->a3[accuire remedy]
+    o4--no -->a5[alter remedy memory connection to location]
     a5-->o3
     a3-->a1
 ```
