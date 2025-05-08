@@ -1,68 +1,207 @@
-#include <vector>
-#include <string>
-#include <iostream>
 #include <chrono>
-#include <thread>
-#include <queue>
+#include <iostream>
 #include <map>
+#include <queue>
+#include <string>
+#include <thread>
+#include <vector>
 
-class Item{
-public:
-    Item(std::string);
-    std::string getName();
-private:
-    std::string mName;
+struct Position {
+    float x;
+    float y;
+    float z;
 };
 
-Item::Item(std::string name){
-    name = name;
+struct ItemDescription {
+    float red;
+    float green;
+    float blue;
+    float size;
+    float roundness;
+    float hardness;
+};
+
+class Item {
+public:
+    Item(std::string, ItemDescription);
+    std::string getName();
+    ItemDescription getDescription();
+
+private:
+    std::string mName;
+    ItemDescription mDescription;
+};
+
+Item::Item(std::string name, ItemDescription description) {
+    mName = name;
+    mDescription = description;
 }
 
-std::string Item::getName(){
-    return mName;
-}
+std::string Item::getName() { return mName; }
 
 Item hoddog = Item("Hotdog");
 Item money = Item("Money");
 
-class HealthStatus{
+class ItemKnowledge {
 public:
-    HealthStatus(std::string);
+    ItemKnowledge(Item*);
+    float getOpinion();
+
+private:
+    ItemDescription mDescription;
+    float mOpinion;
+}
+
+ItemKnowledge::ItemKnowledge(Item* item) {
+    mDescription = item->getDescription();
+}
+
+class Location {
+public:
+    Location(std::string);
     std::string getName();
+
 private:
     std::string mName;
 };
 
-HealthStatus::HealthStatus(std::string name){
-    mName = name;
+Location::Location(std::string name) { mName = name; }
+
+std::string Location::getName() { return mName; }
+
+Location home = Location("Home");
+Location park = Location("Park");
+
+class LocationKnowledge {
+public:
+    LocationKnowledge(Location*);
+    float getOpinion();
+
+private:
+    Location* mLocation;
+    float mOpinion;
+};
+
+LocationKnowledge::LocationKnowledge(Location* location) {
+    mLocation = location;
 }
 
-std::string HealthStatus::getName(){
-    return mName;
+float LocationKnowledge::getOpinion() { return mOpinion; }
+
+class ItemMemory {
+public:
+    ItemMemory(ItemKnowledge*, LocationKnowledge*, struct Position);
+    Position getPosition();
+
+private:
+    ItemKnowledge* mItemKnowledge;
+    LocationKnowledge* mLocationKnowledge;
+    Position mPosition;
+    float mCertainty;
+};
+
+ItemMemory::ItemMemory(ItemKnowledge* itemK, LocationKnowledge* locationK,
+                       struct Position position) {
+    mItemKnowledge = itemK;
+    mLocationKnowledge = locationK;
+    mPosition = position;
 }
+
+Position ItemMemory::getPosition() { return mPosition; }
+
+class EventMemory {
+public:
+    EventMemory();
+
+private:
+    LocationKnowledge* mLocationKnowledge;
+};
+
+class HealthStatus {
+public:
+    HealthStatus(std::string);
+    std::string getName();
+
+private:
+    std::string mName;
+};
+
+HealthStatus::HealthStatus(std::string name) { mName = name; }
+
+std::string HealthStatus::getName() { return mName; }
 
 HealthStatus satation = HealthStatus("Satation");
 
 class Person;
 
-class Task{
+union ActionArgs {
+
+    struct {
+        void call(Person* person, Item* item) {
+            if (person->trade(item, -1)) {
+                person->alter(&satation, 0.4f);
+                std::cout << person->getName();
+                std::cout << " ate ";
+                std::cout << item->getName();
+                std::cout << "\n";
+            }
+        };
+        Person* person;
+        Item* item;
+    } eatItem;
+    struct {
+        void call(Person* person, Item* item) {
+            if (person->trade(&money, -10)) {
+                person->trade(item, 1);
+                std::cout << person->getName();
+                std::cout << " bought ";
+                std::cout << item->getName();
+                std::cout << "\n";
+            }
+        };
+        Person* person;
+        Item* item;
+    } buyItem;
+
+}
+
+class Action {
 public:
-    Task(int (*action)(Person*));
+    Action(void (*)(ActionArgs), ActionArgs);
+    void call();
+    std::string getName();
+
+private:
+    void (*mAction)(ActionArgs);
+    ActionArgs mActionArgs;
+    std::string mName;
+    std::string mDescription;
+};
+
+Action::Action(int (*action)(ActionArgs), ActionArgs actionArgs) {
+    mAction = action;
+    mActionArgs = actionArgs;
+}
+
+int Action::getName() { return mName; }
+
+void Action::call() { mAction(mActionArgs); }
+
+class Task {
+public:
+    Task(int (*)(Person*));
     int call(Person*);
+
 private:
     std::string mName;
     int (*mAction)(Person*);
 };
 
-Task::Task(int (*action)(Person*)){
-    mAction = action;
-}
+Task::Task(int (*action)(Person*)) { mAction = action; }
 
-int Task::call(Person* person){
-    return mAction(person);
-}
+int Task::call(Person* person) { return mAction(person); }
 
-class Person{
+class Person {
 public:
     Person(std::string);
     bool createTask();
@@ -72,13 +211,13 @@ public:
     std::string getName();
 
 private:
-    std::string                     mName;
-    std::queue<Task>                mTasks;
-    std::map<Item*, int>            mItems;
-    std::map<HealthStatus*, float>  mHealth;
+    std::string mName;
+    std::queue<Task> mTasks;
+    std::map<Item*, int> mItems;
+    std::map<HealthStatus*, float> mHealth;
 };
 
-Person::Person(std::string name){
+Person::Person(std::string name) {
     mName = name;
     mHealth[&satation] = 1.0f;
     mItems[&money] = 100;
@@ -87,12 +226,10 @@ Person::Person(std::string name){
     std::cout << " created\n";
 }
 
-std::string Person::getName(){
-    return mName;
-}
+std::string Person::getName() { return mName; }
 
-int buyDog(Person* person){
-    if (person->trade(&money, -10)){
+int buyDog(Person* person) {
+    if (person->trade(&money, -10)) {
         person->trade(&hoddog, 1);
         std::cout << person->getName();
         std::cout << " buy Hoddog\n";
@@ -100,8 +237,8 @@ int buyDog(Person* person){
     return 1;
 }
 
-int eatDog(Person* person){
-    if (person->trade(&hoddog, -1)){
+int eatDog(Person* person) {
+    if (person->trade(&hoddog, -1)) {
         person->alter(&satation, 0.4f);
         std::cout << person->getName();
         std::cout << " eet Hoddog\n";
@@ -109,15 +246,15 @@ int eatDog(Person* person){
     return 1;
 }
 
-bool Person::createTask(){
+bool Person::createTask() {
     mHealth[&satation] -= 0.1f;
 
     if (mHealth[&satation] < 0.2f) {
-        if (1 <= mItems[&hoddog]){
+        if (1 <= mItems[&hoddog]) {
             mTasks.push(Task(eatDog));
             return true;
         }
-        if (10 <= mItems[&money]){
+        if (10 <= mItems[&money]) {
             mTasks.push(Task(buyDog));
             return true;
         }
@@ -125,28 +262,30 @@ bool Person::createTask(){
     return false;
 }
 
-void Person::consumeTask(){
-    if (!mTasks.empty()){
+void Person::consumeTask() {
+    if (!mTasks.empty()) {
         mTasks.front().call(this);
         mTasks.pop();
     }
 }
 
-bool Person::trade(Item* item, int amount){
-    if (amount < 0 && mItems[item] < amount) {return false;}
+bool Person::trade(Item* item, int amount) {
+    if (amount < 0 && mItems[item] < amount) {
+        return false;
+    }
     mItems[item] += amount;
     return true;
 }
 
-bool Person::alter(HealthStatus* item, float amount){
+bool Person::alter(HealthStatus* item, float amount) {
     mHealth[item] += amount;
     return true;
 }
 
-int main(){
+int main() {
     std::vector<Person> people = {Person("Bobby"), Person("Kenta")};
-    for (int i = 0; i < 10; i++){
-        for (int j = 0; j < people.size(); j++){
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < people.size(); j++) {
             people.at(j).createTask();
             people.at(j).consumeTask();
         }
