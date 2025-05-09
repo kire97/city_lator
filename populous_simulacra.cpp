@@ -37,10 +37,12 @@ Item::Item(std::string name, ItemDescription description) {
     mDescription = description;
 }
 
+ItemDescription Item::getDescription() { return mDescription; }
+
 std::string Item::getName() { return mName; }
 
-Item hoddog = Item("Hotdog");
-Item money = Item("Money");
+Item hotdog = Item("Hotdog", {0.7f, 0.45f, 0.30f, 0.15f, 0.7f, 0.2f});
+Item money = Item("Money", {0.7f, 0.45f, 0.30f, 0.1f, 0.1f, 0.7f});
 
 class ItemKnowledge {
 public:
@@ -50,7 +52,7 @@ public:
 private:
     ItemDescription mDescription;
     float mOpinion;
-}
+};
 
 ItemKnowledge::ItemKnowledge(Item* item) {
     mDescription = item->getDescription();
@@ -137,69 +139,49 @@ class Person;
 union ActionArgs {
 
     struct {
-        void call(Person* person, Item* item) {
-            if (person->trade(item, -1)) {
-                person->alter(&satation, 0.4f);
-                std::cout << person->getName();
-                std::cout << " ate ";
-                std::cout << item->getName();
-                std::cout << "\n";
-            }
-        };
         Person* person;
         Item* item;
-    } eatItem;
+    } transaction;
     struct {
-        void call(Person* person, Item* item) {
-            if (person->trade(&money, -10)) {
-                person->trade(item, 1);
-                std::cout << person->getName();
-                std::cout << " bought ";
-                std::cout << item->getName();
-                std::cout << "\n";
-            }
-        };
         Person* person;
-        Item* item;
-    } buyItem;
-
-}
+        Position position;
+    } position;
+};
 
 class Action {
 public:
-    Action(void (*)(ActionArgs), ActionArgs);
-    void call();
+    Action(void (*)(ActionArgs));
+    void execute(ActionArgs);
     std::string getName();
 
 private:
     void (*mAction)(ActionArgs);
-    ActionArgs mActionArgs;
     std::string mName;
     std::string mDescription;
 };
 
-Action::Action(int (*action)(ActionArgs), ActionArgs actionArgs) {
-    mAction = action;
-    mActionArgs = actionArgs;
-}
+Action::Action(void (*action)(ActionArgs)) { mAction = action; }
 
-int Action::getName() { return mName; }
+void Action::execute(ActionArgs args) { mAction(args); }
 
-void Action::call() { mAction(mActionArgs); }
+std::string Action::getName() { return mName; }
 
 class Task {
 public:
-    Task(int (*)(Person*));
-    int call(Person*);
+    Task(Action*, ActionArgs);
+    void execute();
 
 private:
-    std::string mName;
-    int (*mAction)(Person*);
+    Action* mAction;
+    ActionArgs mActionArgs;
 };
 
-Task::Task(int (*action)(Person*)) { mAction = action; }
+Task::Task(Action* action, ActionArgs arguments) {
+    mAction = action;
+    mActionArgs = arguments;
+}
 
-int Task::call(Person* person) { return mAction(person); }
+void Task::execute() { mAction->execute(mActionArgs); }
 
 class Person {
 public:
@@ -228,34 +210,36 @@ Person::Person(std::string name) {
 
 std::string Person::getName() { return mName; }
 
-int buyDog(Person* person) {
-    if (person->trade(&money, -10)) {
-        person->trade(&hoddog, 1);
-        std::cout << person->getName();
-        std::cout << " buy Hoddog\n";
+Action buyItem = Action([](ActionArgs args) {
+    if (args.transaction.person->trade(&money, -10)) {
+        args.transaction.person->trade(args.transaction.item, 1);
+        std::cout << args.transaction.person->getName();
+        std::cout << " bought ";
+        std::cout << args.transaction.item->getName();
+        std::cout << "\n";
     }
-    return 1;
-}
+});
 
-int eatDog(Person* person) {
-    if (person->trade(&hoddog, -1)) {
-        person->alter(&satation, 0.4f);
-        std::cout << person->getName();
-        std::cout << " eet Hoddog\n";
+Action eatItem = Action([](ActionArgs args) {
+    if (args.transaction.person->trade(args.transaction.item, -1)) {
+        args.transaction.person->alter(&satation, 0.4f);
+        std::cout << args.transaction.person->getName();
+        std::cout << " ate ";
+        std::cout << args.transaction.item->getName();
+        std::cout << "\n";
     }
-    return 1;
-}
+});
 
 bool Person::createTask() {
     mHealth[&satation] -= 0.1f;
 
     if (mHealth[&satation] < 0.2f) {
-        if (1 <= mItems[&hoddog]) {
-            mTasks.push(Task(eatDog));
+        if (1 <= mItems[&hotdog]) {
+            mTasks.push(Task(&eatItem, {this, &hotdog}));
             return true;
         }
         if (10 <= mItems[&money]) {
-            mTasks.push(Task(buyDog));
+            mTasks.push(Task(&buyItem, {this, &hotdog}));
             return true;
         }
     }
@@ -264,7 +248,7 @@ bool Person::createTask() {
 
 void Person::consumeTask() {
     if (!mTasks.empty()) {
-        mTasks.front().call(this);
+        mTasks.front().execute();
         mTasks.pop();
     }
 }
@@ -289,7 +273,7 @@ int main() {
             people.at(j).createTask();
             people.at(j).consumeTask();
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     return 0;
 }
