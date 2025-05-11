@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <map>
@@ -133,6 +134,7 @@ HealthStatus::HealthStatus(std::string name) { mName = name; }
 std::string HealthStatus::getName() { return mName; }
 
 HealthStatus satation = HealthStatus("Satation");
+HealthStatus energy = HealthStatus("Energy");
 
 class Person;
 
@@ -146,6 +148,9 @@ union ActionArgs {
         Person* person;
         Position position;
     } position;
+    struct {
+        Person* person;
+    } health;
 };
 
 class Action {
@@ -190,6 +195,10 @@ public:
     void consumeTask();
     bool trade(Item*, int);
     bool alter(HealthStatus*, float);
+    float getHealthStatus(HealthStatus*);
+    void applyAfflictions();
+    bool addAffliction(Action*);
+    bool delAffliction(Action*);
     std::string getName();
 
 private:
@@ -197,18 +206,8 @@ private:
     std::queue<Task> mTasks;
     std::map<Item*, int> mItems;
     std::map<HealthStatus*, float> mHealth;
+    std::vector<Action*> mAfflictions;
 };
-
-Person::Person(std::string name) {
-    mName = name;
-    mHealth[&satation] = 1.0f;
-    mItems[&money] = 100;
-    std::cout << "Person ";
-    std::cout << name;
-    std::cout << " created\n";
-}
-
-std::string Person::getName() { return mName; }
 
 Action buyItem = Action([](ActionArgs args) {
     if (args.transaction.person->trade(&money, -10)) {
@@ -230,9 +229,60 @@ Action eatItem = Action([](ActionArgs args) {
     }
 });
 
-bool Person::createTask() {
-    mHealth[&satation] -= 0.1f;
+Action afflictionSleep =
+    Action([](ActionArgs args) { args.health.person->alter(&energy, 0.05f); });
 
+Action afflictionAwake =
+    Action([](ActionArgs args) { args.health.person->alter(&energy, -0.1f); });
+
+Action afflictionDigest = Action([](ActionArgs args) {
+    if (args.health.person->alter(&satation, -0.1f)) {
+        args.health.person->alter(&energy, 0.05f);
+    }
+});
+
+Person::Person(std::string name) {
+    mName = name;
+    mHealth[&satation] = 1.0f;
+    mItems[&money] = 100;
+    this->addAffliction(&afflictionDigest);
+    this->addAffliction(&afflictionAwake);
+    std::cout << "Person ";
+    std::cout << name;
+    std::cout << " created\n";
+}
+
+float Person::getHealthStatus(HealthStatus* status) { return mHealth[status]; }
+
+std::string Person::getName() { return mName; }
+
+bool Person::addAffliction(Action* affliction) {
+    if (std::find(mAfflictions.begin(), mAfflictions.end(), affliction) !=
+        mAfflictions.end()) {
+        // Affliction is already applied.
+        return false;
+    }
+    mAfflictions.push_back(affliction);
+    return true;
+}
+
+bool Person::delAffliction(Action* affliction) {
+    auto it = std::find(mAfflictions.begin(), mAfflictions.end(), affliction);
+    if (it == mAfflictions.end()) {
+        // Affliction not on person, nothing to remove.
+        return false;
+    }
+    mAfflictions.erase(it);
+    return true;
+}
+
+void Person::applyAfflictions() {
+    for (int i = 0; i < mAfflictions.size(); i++) {
+        mAfflictions.at(i)->execute({this});
+    }
+}
+
+bool Person::createTask() {
     if (mHealth[&satation] < 0.2f) {
         if (1 <= mItems[&hotdog]) {
             mTasks.push(Task(&eatItem, {this, &hotdog}));
@@ -262,14 +312,19 @@ bool Person::trade(Item* item, int amount) {
 }
 
 bool Person::alter(HealthStatus* item, float amount) {
-    mHealth[item] += amount;
-    return true;
+    float newAmount = mHealth[item] + amount;
+    if (0 < newAmount && newAmount < 1.0f) {
+        mHealth[item] = newAmount;
+        return true;
+    }
+    return false;
 }
 
 int main() {
     std::vector<Person> people = {Person("Bobby"), Person("Kenta")};
     for (int i = 0; i < 10; i++) {
         for (int j = 0; j < people.size(); j++) {
+            people.at(j).applyAfflictions();
             people.at(j).createTask();
             people.at(j).consumeTask();
         }
