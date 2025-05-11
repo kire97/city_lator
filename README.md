@@ -3,7 +3,7 @@ TL;DR:
 Small scale city simulation where characters generate their day/life based on needs and wants.
 The player possesses a random character everytime the current character loses consiousness.
 
-
+I guess it is just a colony simulator, but with a vary mundane base.
 
 Start everyday as a different person in a city starting with 100 ppl
 Small scale self contained city
