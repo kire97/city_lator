@@ -14,3 +14,8 @@ def format(c):
 @task(pre=[format, check], default=True)
 def default(c):
     pass
+
+
+@task(pre=[format])
+def build(c):
+    c.run('g++ -static populous_simulacra.cpp')
