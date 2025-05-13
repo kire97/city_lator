@@ -19,3 +19,8 @@ def default(c):
 @task(pre=[format])
 def build(c):
     c.run('g++ -static populous_simulacra.cpp')
+
+
+@task
+def doc(c):
+    c.run('doxygen Doxygen')

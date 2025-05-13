@@ -88,3 +88,10 @@ The persons threshold for recognizing the object is dependant on factors such as
 When recollecting an item memory that has a known location; a mental representation of the objects known parameters is created at the known location.
 If an object matching the representation is recognized then the object is found.
 If the mental representation is occluded, try to get a vantage point where it can be observed before dismissing the memory.
+
+Doxygen prerequisites:
+
+https://www.graphviz.org/download/
+
+https://www.doxygen.nl/download.html
+
