@@ -1,37 +1,30 @@
+#include "person.hpp"
 #include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <map>
 #include <queue>
+/** @cond */
 #include <string>
+/** @endcond */
 #include <thread>
 #include <vector>
 
-struct Position {
-    float x;
-    float y;
-    float z;
-};
+const Color SKIN_COLOR_0 = {1.0f, 0.8f, 0.75f};
+const Color SKIN_COLOR_1 = {0.9f, 0.7f, 0.6f};
+const Color SKIN_COLOR_2 = {0.75f, 0.55f, 0.48f};
 
-struct ItemDescription {
-    float red;
-    float green;
-    float blue;
-    float size;
-    float roundness;
-    float hardness;
-};
+const Color HAIR_COLOR_0 = {0.0f, 0.0f, 0.0f};
+const Color HAIR_COLOR_1 = {1.0f, 1.0f, 1.0f};
+const Color HAIR_COLOR_2 = {0.25f, 0.18f, 0.16f};
 
-class Item {
-public:
-    Item(std::string, ItemDescription);
-    std::string getName();
-    ItemDescription getDescription();
+const Color EYE_COLOR_0 = {0.25f, 0.18f, 0.16f}; // brown
+const Color EYE_COLOR_1 = {0.05f, 0.66f, 0.95f}; // blue
+const Color EYE_COLOR_2 = {0.35f, 0.5f, 0.3f};   // green
 
-private:
-    std::string mName;
-    ItemDescription mDescription;
-};
+PersonKnowledge::PersonKnowledge(Person* person) {
+    mDescription = person->getDescription();
+}
 
 Item::Item(std::string name, ItemDescription description) {
     mName = name;
@@ -42,31 +35,12 @@ ItemDescription Item::getDescription() { return mDescription; }
 
 std::string Item::getName() { return mName; }
 
-Item hotdog = Item("Hotdog", {0.7f, 0.45f, 0.30f, 0.15f, 0.7f, 0.2f});
-Item money = Item("Money", {0.7f, 0.45f, 0.30f, 0.1f, 0.1f, 0.7f});
-
-class ItemKnowledge {
-public:
-    ItemKnowledge(Item*);
-    float getOpinion();
-
-private:
-    ItemDescription mDescription;
-    float mOpinion;
-};
+Item hotdog = Item("Hotdog", {{0.7f, 0.45f, 0.30f}, 0.15f, 0.7f, 0.2f});
+Item money = Item("Money", {{0.7f, 0.45f, 0.30f}, 0.1f, 0.1f, 0.7f});
 
 ItemKnowledge::ItemKnowledge(Item* item) {
     mDescription = item->getDescription();
 }
-
-class Location {
-public:
-    Location(std::string);
-    std::string getName();
-
-private:
-    std::string mName;
-};
 
 Location::Location(std::string name) { mName = name; }
 
@@ -75,33 +49,11 @@ std::string Location::getName() { return mName; }
 Location home = Location("Home");
 Location park = Location("Park");
 
-class LocationKnowledge {
-public:
-    LocationKnowledge(Location*);
-    float getOpinion();
-
-private:
-    Location* mLocation;
-    float mOpinion;
-};
-
 LocationKnowledge::LocationKnowledge(Location* location) {
     mLocation = location;
 }
 
 float LocationKnowledge::getOpinion() { return mOpinion; }
-
-class ItemMemory {
-public:
-    ItemMemory(ItemKnowledge*, LocationKnowledge*, struct Position);
-    Position getPosition();
-
-private:
-    ItemKnowledge* mItemKnowledge;
-    LocationKnowledge* mLocationKnowledge;
-    Position mPosition;
-    float mCertainty;
-};
 
 ItemMemory::ItemMemory(ItemKnowledge* itemK, LocationKnowledge* locationK,
                        struct Position position) {
@@ -112,23 +64,6 @@ ItemMemory::ItemMemory(ItemKnowledge* itemK, LocationKnowledge* locationK,
 
 Position ItemMemory::getPosition() { return mPosition; }
 
-class EventMemory {
-public:
-    EventMemory();
-
-private:
-    LocationKnowledge* mLocationKnowledge;
-};
-
-class HealthStatus {
-public:
-    HealthStatus(std::string);
-    std::string getName();
-
-private:
-    std::string mName;
-};
-
 HealthStatus::HealthStatus(std::string name) { mName = name; }
 
 std::string HealthStatus::getName() { return mName; }
@@ -136,50 +71,11 @@ std::string HealthStatus::getName() { return mName; }
 HealthStatus satation = HealthStatus("Satation");
 HealthStatus energy = HealthStatus("Energy");
 
-class Person;
-
-union ActionArgs {
-
-    struct {
-        Person* person;
-        Item* item;
-    } transaction;
-    struct {
-        Person* person;
-        Position position;
-    } position;
-    struct {
-        Person* person;
-    } health;
-};
-
-class Action {
-public:
-    Action(void (*)(ActionArgs));
-    void execute(ActionArgs);
-    std::string getName();
-
-private:
-    void (*mAction)(ActionArgs);
-    std::string mName;
-    std::string mDescription;
-};
-
 Action::Action(void (*action)(ActionArgs)) { mAction = action; }
 
 void Action::execute(ActionArgs args) { mAction(args); }
 
 std::string Action::getName() { return mName; }
-
-class Task {
-public:
-    Task(Action*, ActionArgs);
-    void execute();
-
-private:
-    Action* mAction;
-    ActionArgs mActionArgs;
-};
 
 Task::Task(Action* action, ActionArgs arguments) {
     mAction = action;
@@ -188,61 +84,41 @@ Task::Task(Action* action, ActionArgs arguments) {
 
 void Task::execute() { mAction->execute(mActionArgs); }
 
-class Person {
-public:
-    Person(std::string);
-    bool createTask();
-    void consumeTask();
-    bool trade(Item*, int);
-    bool alter(HealthStatus*, float);
-    float getHealthStatus(HealthStatus*);
-    void applyAfflictions();
-    bool addAffliction(Action*);
-    bool delAffliction(Action*);
-    std::string getName();
-
-private:
-    std::string mName;
-    std::queue<Task> mTasks;
-    std::map<Item*, int> mItems;
-    std::map<HealthStatus*, float> mHealth;
-    std::vector<Action*> mAfflictions;
-};
-
 Action buyItem = Action([](ActionArgs args) {
-    if (args.transaction.person->trade(&money, -10)) {
-        args.transaction.person->trade(args.transaction.item, 1);
-        std::cout << args.transaction.person->getName();
+    if (args.args.transaction.person->trade(&money, -10)) {
+        args.args.transaction.person->trade(args.args.transaction.item, 1);
+        std::cout << args.args.transaction.person->getName();
         std::cout << " bought ";
-        std::cout << args.transaction.item->getName();
+        std::cout << args.args.transaction.item->getName();
         std::cout << "\n";
     }
 });
 
 Action eatItem = Action([](ActionArgs args) {
-    if (args.transaction.person->trade(args.transaction.item, -1)) {
-        args.transaction.person->alter(&satation, 0.4f);
-        std::cout << args.transaction.person->getName();
+    if (args.args.transaction.person->trade(args.args.transaction.item, -1)) {
+        args.args.transaction.person->alter(&satation, 0.4f);
+        std::cout << args.args.transaction.person->getName();
         std::cout << " ate ";
-        std::cout << args.transaction.item->getName();
+        std::cout << args.args.transaction.item->getName();
         std::cout << "\n";
     }
 });
 
-Action afflictionSleep =
-    Action([](ActionArgs args) { args.health.person->alter(&energy, 0.05f); });
+Action afflictionSleep = Action(
+    [](ActionArgs args) { args.args.health.person->alter(&energy, 0.05f); });
 
-Action afflictionAwake =
-    Action([](ActionArgs args) { args.health.person->alter(&energy, -0.1f); });
+Action afflictionAwake = Action(
+    [](ActionArgs args) { args.args.health.person->alter(&energy, -0.1f); });
 
 Action afflictionDigest = Action([](ActionArgs args) {
-    if (args.health.person->alter(&satation, -0.1f)) {
-        args.health.person->alter(&energy, 0.05f);
+    if (args.args.health.person->alter(&satation, -0.1f)) {
+        args.args.health.person->alter(&energy, 0.05f);
     }
 });
 
-Person::Person(std::string name) {
+Person::Person(std::string name, PersonDescription description) {
     mName = name;
+    mDescription = description;
     mHealth[&satation] = 1.0f;
     mItems[&money] = 100;
     this->addAffliction(&afflictionDigest);
@@ -251,6 +127,8 @@ Person::Person(std::string name) {
     std::cout << name;
     std::cout << " created\n";
 }
+
+PersonDescription Person::getDescription() { return mDescription; }
 
 float Person::getHealthStatus(HealthStatus* status) { return mHealth[status]; }
 
@@ -278,18 +156,20 @@ bool Person::delAffliction(Action* affliction) {
 
 void Person::applyAfflictions() {
     for (int i = 0; i < mAfflictions.size(); i++) {
-        mAfflictions.at(i)->execute({this});
+        mAfflictions.at(i)->execute({ActionArgs::Type::health, {this}});
     }
 }
 
 bool Person::createTask() {
     if (mHealth[&satation] < 0.2f) {
         if (1 <= mItems[&hotdog]) {
-            mTasks.push(Task(&eatItem, {this, &hotdog}));
+            mTasks.push(Task(&eatItem,
+                             {ActionArgs::Type::transaction, {this, &hotdog}}));
             return true;
         }
         if (10 <= mItems[&money]) {
-            mTasks.push(Task(&buyItem, {this, &hotdog}));
+            mTasks.push(Task(&buyItem,
+                             {ActionArgs::Type::transaction, {this, &hotdog}}));
             return true;
         }
     }
@@ -321,14 +201,18 @@ bool Person::alter(HealthStatus* item, float amount) {
 }
 
 int main() {
-    std::vector<Person> people = {Person("Bobby"), Person("Kenta")};
-    for (int i = 0; i < 10; i++) {
+    std::vector<Person> people = {
+        Person("Bobby",
+               {SKIN_COLOR_0, EYE_COLOR_0, HAIR_COLOR_0, 0.5f, 1.75f, 1.0f}),
+        Person("Kenta",
+               {SKIN_COLOR_0, EYE_COLOR_1, HAIR_COLOR_2, 0.6f, 1.80f, 1.5f})};
+    for (int i = 0; i < 100; i++) {
         for (int j = 0; j < people.size(); j++) {
             people.at(j).applyAfflictions();
             people.at(j).createTask();
             people.at(j).consumeTask();
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        // std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     return 0;
 }
