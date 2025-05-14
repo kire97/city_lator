@@ -1,22 +1,21 @@
 #include "person.hpp"
 #include <algorithm>
+#include <assert.h>
 #include <chrono>
 #include <iostream>
 #include <map>
 #include <queue>
-/** @cond */
 #include <string>
-/** @endcond */
 #include <thread>
 #include <vector>
 
-const Color SKIN_COLOR_0 = {1.0f, 0.8f, 0.75f};
-const Color SKIN_COLOR_1 = {0.9f, 0.7f, 0.6f};
-const Color SKIN_COLOR_2 = {0.75f, 0.55f, 0.48f};
+const Color SKIN_COLOR_0 = {1.0f, 0.8f, 0.75f};   // very light
+const Color SKIN_COLOR_1 = {0.9f, 0.7f, 0.6f};    // light
+const Color SKIN_COLOR_2 = {0.75f, 0.55f, 0.48f}; // tan
 
-const Color HAIR_COLOR_0 = {0.0f, 0.0f, 0.0f};
-const Color HAIR_COLOR_1 = {1.0f, 1.0f, 1.0f};
-const Color HAIR_COLOR_2 = {0.25f, 0.18f, 0.16f};
+const Color HAIR_COLOR_0 = {0.0f, 0.0f, 0.0f};    // black
+const Color HAIR_COLOR_1 = {1.0f, 1.0f, 1.0f};    // white
+const Color HAIR_COLOR_2 = {0.25f, 0.18f, 0.16f}; // brown
 
 const Color EYE_COLOR_0 = {0.25f, 0.18f, 0.16f}; // brown
 const Color EYE_COLOR_1 = {0.05f, 0.66f, 0.95f}; // blue
@@ -34,9 +33,6 @@ Item::Item(std::string name, ItemDescription description) {
 ItemDescription Item::getDescription() { return mDescription; }
 
 std::string Item::getName() { return mName; }
-
-Item hotdog = Item("Hotdog", {{0.7f, 0.45f, 0.30f}, 0.15f, 0.7f, 0.2f});
-Item money = Item("Money", {{0.7f, 0.45f, 0.30f}, 0.1f, 0.1f, 0.7f});
 
 ItemKnowledge::ItemKnowledge(Item* item) {
     mDescription = item->getDescription();
@@ -77,6 +73,9 @@ void Action::execute(ActionArgs args) { mAction(args); }
 
 std::string Action::getName() { return mName; }
 
+Item hotdog = Item("Hotdog", {{0.7f, 0.45f, 0.30f}, 0.15f, 0.7f, 0.2f, 0.2f});
+Item money = Item("Money", {{0.7f, 0.45f, 0.30f}, 0.1f, 0.1f, 0.7f, 0.01f});
+
 Task::Task(Action* action, ActionArgs arguments) {
     mAction = action;
     mActionArgs = arguments;
@@ -85,6 +84,7 @@ Task::Task(Action* action, ActionArgs arguments) {
 void Task::execute() { mAction->execute(mActionArgs); }
 
 Action buyItem = Action([](ActionArgs args) {
+    assert(args.type == ActionArgs::Type::transaction);
     if (args.args.transaction.person->trade(&money, -10)) {
         args.args.transaction.person->trade(args.args.transaction.item, 1);
         std::cout << args.args.transaction.person->getName();
@@ -95,6 +95,7 @@ Action buyItem = Action([](ActionArgs args) {
 });
 
 Action eatItem = Action([](ActionArgs args) {
+    assert(args.type == ActionArgs::Type::transaction);
     if (args.args.transaction.person->trade(args.args.transaction.item, -1)) {
         args.args.transaction.person->alter(&satation, 0.4f);
         std::cout << args.args.transaction.person->getName();
@@ -130,6 +131,8 @@ Person::Person(std::string name, PersonDescription description) {
 
 PersonDescription Person::getDescription() { return mDescription; }
 
+int Person::getItemCount(Item* item) { return mItems[item]; }
+
 float Person::getHealthStatus(HealthStatus* status) { return mHealth[status]; }
 
 std::string Person::getName() { return mName; }
@@ -158,6 +161,21 @@ void Person::applyAfflictions() {
     for (int i = 0; i < mAfflictions.size(); i++) {
         mAfflictions.at(i)->execute({ActionArgs::Type::health, {this}});
     }
+}
+
+bool Person::addItemKnowledge(ItemKnowledge itemK) {
+    mItemKnowledge.push_back(itemK);
+    return true;
+}
+
+bool Person::addPersonKnowledge(PersonKnowledge personK) {
+    mPersonKnowledge.push_back(personK);
+    return true;
+}
+
+bool Person::addLocationKnowledge(LocationKnowledge locationK) {
+    mLocationKnowledge.push_back(locationK);
+    return true;
 }
 
 bool Person::createTask() {
@@ -201,11 +219,19 @@ bool Person::alter(HealthStatus* item, float amount) {
 }
 
 int main() {
+    std::vector<ItemKnowledge> basicKnowledge = {ItemKnowledge(&hotdog),
+                                                 ItemKnowledge(&money)};
     std::vector<Person> people = {
         Person("Bobby",
                {SKIN_COLOR_0, EYE_COLOR_0, HAIR_COLOR_0, 0.5f, 1.75f, 1.0f}),
         Person("Kenta",
                {SKIN_COLOR_0, EYE_COLOR_1, HAIR_COLOR_2, 0.6f, 1.80f, 1.5f})};
+
+    for (Person person : people) {
+        for (ItemKnowledge itemK : basicKnowledge) {
+            person.addItemKnowledge(itemK);
+        }
+    }
     for (int i = 0; i < 100; i++) {
         for (int j = 0; j < people.size(); j++) {
             people.at(j).applyAfflictions();

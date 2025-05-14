@@ -1,8 +1,6 @@
 #include <map>
 #include <queue>
-/** @cond */
 #include <string>
-/** @endcond */
 #include <vector>
 
 struct Position {
@@ -31,9 +29,13 @@ struct ItemDescription {
     float size;
     float roundness;
     float hardness;
+    float weight;
 };
 
+struct ActionArgs;
+
 class Person;
+class Action;
 
 class PersonKnowledge {
 public:
@@ -53,6 +55,7 @@ public:
 private:
     std::string mName;
     ItemDescription mDescription;
+    std::vector<std::tuple<Action*, ActionArgs>> mActions;
 };
 
 class ItemKnowledge {
@@ -81,7 +84,10 @@ public:
 
 private:
     Location* mLocation;
-    std::map<ItemKnowledge*, float> mItems;
+    std::map<ItemKnowledge*, float>
+        mItems; // These ItemKnowledge will be pointing to items in a vector
+                // belonging to Person. I don't know if that vector will resize
+                // itself because that would cause pointer issues.
     std::map<PersonKnowledge*, float> mPeople;
     float mOpinion;
 };
@@ -165,18 +171,25 @@ public:
     void consumeTask();
     bool trade(Item*, int);
     bool alter(HealthStatus*, float);
+    int getItemCount(Item*);
     float getHealthStatus(HealthStatus*);
     void applyAfflictions();
     bool addAffliction(Action*);
     bool delAffliction(Action*);
+    bool addItemKnowledge(ItemKnowledge);
+    bool addPersonKnowledge(PersonKnowledge);
+    bool addLocationKnowledge(LocationKnowledge);
     std::string getName();
     PersonDescription getDescription();
 
 private:
     PersonDescription mDescription;
     std::string mName;
-    std::queue<Task> mTasks;
     std::map<Item*, int> mItems;
     std::map<HealthStatus*, float> mHealth;
     std::vector<Action*> mAfflictions;
+    std::queue<Task> mTasks;
+    std::vector<ItemKnowledge> mItemKnowledge;
+    std::vector<PersonKnowledge> mPersonKnowledge;
+    std::vector<LocationKnowledge> mLocationKnowledge;
 };
